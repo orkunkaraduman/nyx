@@ -111,10 +111,10 @@ func prxOnConnect(ctx *httpproxy.Context, host string) (
 func prxOnRequest(ctx *httpproxy.Context, req *http.Request) (
 	resp *http.Response) {
 	userData := ctx.UserData.(*prxCtxUserData)
-	/*rn, _ := rand.Int(rand.Reader, big.NewInt(math.MaxInt64))
+	rn, _ := rand.Int(rand.Reader, big.NewInt(math.MaxInt64))
 	h := md5.New()
 	h.Write(rn.Bytes())
-	userData.SubID = hex.EncodeToString(h.Sum(nil))*/
+	userData.SubID = hex.EncodeToString(h.Sum(nil))
 	userData.SubTm = time.Now()
 	log.Printf("Request %s %s %s", userData.ID, req.Method, req.RequestURI)
 	if priv, _ := isPrivateHostname(req.URL.Hostname()); priv {
