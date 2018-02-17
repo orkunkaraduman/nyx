@@ -4,6 +4,7 @@
 *.cache
 *.swap
 *.swp
+*.tmp
 
 *.o
 *.a
