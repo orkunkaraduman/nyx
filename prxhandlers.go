@@ -54,7 +54,7 @@ func prxOnAccept(ctx *httpproxy.Context, w http.ResponseWriter,
 	if userData.RealAddr != "" {
 		userData.RrAddr += fmt.Sprintf("[%s]", userData.RealAddr)
 	}
-	if !isPrivateHost(ctx.Req.RemoteAddr) {
+	if !isPrivateHost(ctx.Req.RemoteAddr, true) {
 		log.Printf("Accept %s %s", userData.ID, userData.RrAddr)
 	}
 	if r.Method == "GET" && !r.URL.IsAbs() {
@@ -84,12 +84,12 @@ func prxOnAuth(ctx *httpproxy.Context, authType string, user string, pass string
 		return false
 	}
 	if p, ok := conf.Auth.Users[user]; ok && p == pass {
-		if !isPrivateHost(ctx.Req.RemoteAddr) {
+		if !isPrivateHost(ctx.Req.RemoteAddr, true) {
 			log.Printf("AuthOK %s %s", userData.ID, userData.AuthUser)
 		}
 		return true
 	}
-	if !isPrivateHost(ctx.Req.RemoteAddr) {
+	if !isPrivateHost(ctx.Req.RemoteAddr, true) {
 		log.Printf("AuthError %s %s", userData.ID, userData.AuthUser)
 	}
 	return false
@@ -98,7 +98,7 @@ func prxOnAuth(ctx *httpproxy.Context, authType string, user string, pass string
 func prxOnConnect(ctx *httpproxy.Context, host string) (
 	ConnectAction httpproxy.ConnectAction, newHost string) {
 	userData := ctx.UserData.(*prxCtxUserData)
-	if !isPrivateHost(ctx.Req.RemoteAddr) {
+	if !isPrivateHost(ctx.Req.RemoteAddr, true) {
 		log.Printf("Connect %s %s %s", userData.ID, ctx.ConnectReq.Method, ctx.ConnectReq.RequestURI)
 	}
 	ConnectAction = httpproxy.ConnectProxy
@@ -124,10 +124,10 @@ func prxOnRequest(ctx *httpproxy.Context, req *http.Request) (
 	h.Write(rn.Bytes())
 	userData.SubID = hex.EncodeToString(h.Sum(nil))
 	userData.SubTm = time.Now()
-	if !isPrivateHost(ctx.Req.RemoteAddr) {
+	if !isPrivateHost(ctx.Req.RemoteAddr, true) {
 		log.Printf("Request %s %s %s", userData.ID, req.Method, req.RequestURI)
 	}
-	if isPrivateHost(req.URL.Host) {
+	if isPrivateHost(req.URL.Host, false) {
 		resp = httpproxy.InMemoryResponse(502, nil, []byte("Can not proxy to private host"))
 		return
 	}

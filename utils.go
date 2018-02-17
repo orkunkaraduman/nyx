@@ -5,7 +5,8 @@ import (
 	"strings"
 )
 
-func isPrivateHostname(hostname string) bool {
+func isPrivateHost(host string, local bool) bool {
+	hostname := strings.SplitN(host, ":", 2)[0]
 	_, localBitBlock, _ := net.ParseCIDR("127.0.0.0/8")
 	_, private24BitBlock, _ := net.ParseCIDR("10.0.0.0/8")
 	_, private20BitBlock, _ := net.ParseCIDR("172.16.0.0/12")
@@ -21,15 +22,11 @@ func isPrivateHostname(hostname string) bool {
 		if ip == nil {
 			return false
 		}
-		if localBitBlock.Contains(ip) || localBitBlockIPv6.Contains(ip) || private24BitBlock.Contains(ip) || private20BitBlock.Contains(ip) ||
-			private16BitBlock.Contains(ip) || privateIPv6.Contains(ip) {
+		if localBitBlock.Contains(ip) || localBitBlockIPv6.Contains(ip) ||
+			(!local && (private24BitBlock.Contains(ip) || private20BitBlock.Contains(ip) ||
+				private16BitBlock.Contains(ip) || privateIPv6.Contains(ip))) {
 			return true
 		}
 	}
 	return false
-}
-
-func isPrivateHost(host string) bool {
-	hostname := strings.SplitN(host, ":", 2)[0]
-	return isPrivateHostname(hostname)
 }
