@@ -2,6 +2,7 @@ package main
 
 import (
 	"net"
+	"strings"
 )
 
 func isPrivateHostname(hostname string) bool {
@@ -26,4 +27,9 @@ func isPrivateHostname(hostname string) bool {
 		}
 	}
 	return false
+}
+
+func isPrivateHost(host string) bool {
+	hostname := strings.SplitN(host, ":", 2)[0]
+	return isPrivateHostname(hostname)
 }
