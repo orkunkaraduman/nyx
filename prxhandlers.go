@@ -54,7 +54,9 @@ func prxOnAccept(ctx *httpproxy.Context, w http.ResponseWriter,
 	if userData.RealAddr != "" {
 		userData.RrAddr += fmt.Sprintf("[%s]", userData.RealAddr)
 	}
-	log.Printf("Accept %s %s", userData.ID, userData.RrAddr)
+	if !isPrivateHostname(ctx.Req.RemoteAddr) {
+		log.Printf("Accept %s %s", userData.ID, userData.RrAddr)
+	}
 	if r.Method == "GET" && !r.URL.IsAbs() {
 		switch r.URL.Path {
 		case "/info":
@@ -82,17 +84,23 @@ func prxOnAuth(ctx *httpproxy.Context, authType string, user string, pass string
 		return false
 	}
 	if p, ok := conf.Auth.Users[user]; ok && p == pass {
-		log.Printf("AuthOK %s %s", userData.ID, userData.AuthUser)
+		if !isPrivateHostname(ctx.Req.RemoteAddr) {
+			log.Printf("AuthOK %s %s", userData.ID, userData.AuthUser)
+		}
 		return true
 	}
-	log.Printf("AuthError %s %s", userData.ID, userData.AuthUser)
+	if !isPrivateHostname(ctx.Req.RemoteAddr) {
+		log.Printf("AuthError %s %s", userData.ID, userData.AuthUser)
+	}
 	return false
 }
 
 func prxOnConnect(ctx *httpproxy.Context, host string) (
 	ConnectAction httpproxy.ConnectAction, newHost string) {
 	userData := ctx.UserData.(*prxCtxUserData)
-	log.Printf("Connect %s %s %s", userData.ID, ctx.ConnectReq.Method, ctx.ConnectReq.RequestURI)
+	if !isPrivateHostname(ctx.Req.RemoteAddr) {
+		log.Printf("Connect %s %s %s", userData.ID, ctx.ConnectReq.Method, ctx.ConnectReq.RequestURI)
+	}
 	ConnectAction = httpproxy.ConnectProxy
 	newHost = host
 	confMu.RLock()
@@ -116,8 +124,10 @@ func prxOnRequest(ctx *httpproxy.Context, req *http.Request) (
 	h.Write(rn.Bytes())
 	userData.SubID = hex.EncodeToString(h.Sum(nil))
 	userData.SubTm = time.Now()
-	log.Printf("Request %s %s %s", userData.ID, req.Method, req.RequestURI)
-	if priv, _ := isPrivateHostname(req.URL.Hostname()); priv {
+	if !isPrivateHostname(ctx.Req.RemoteAddr) {
+		log.Printf("Request %s %s %s", userData.ID, req.Method, req.RequestURI)
+	}
+	if isPrivateHostname(req.URL.Hostname()) {
 		resp = httpproxy.InMemoryResponse(502, nil, []byte("Can not proxy to private host"))
 		return
 	}
